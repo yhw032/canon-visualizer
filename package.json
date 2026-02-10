@@ -10,8 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@magenta/music": "^1.23.1",
     "clsx": "^2.1.1",
+    "midi-parser-js": "^4.0.4",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "tailwind-merge": "^3.4.0",
