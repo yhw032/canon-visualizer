@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { NoteData } from '../hooks/useCanonAudio';
+import type { NoteData } from '../hooks/useCanonAudio';
 import * as Tone from 'tone';
 
 interface LaneProps {
@@ -40,8 +40,11 @@ export const Lane: React.FC<LaneProps> = React.memo(({
 
       // Convert note name to MIDI pitch for color mapping
       const midiPitch = Tone.Frequency(item.note).toMidi();
-      // Map MIDI pitch (21-108) to hue (240° blue for low notes, 0° red for high notes)
-      const hue = 240 - ((midiPitch - 21) / (108 - 21)) * 240;
+      // Canon's actual range is roughly D3 (50) to D6 (86)
+      // Map to full spectrum for vibrant colors
+      const minPitch = 50;  // D3
+      const maxPitch = 86;  // D6
+      const hue = 240 - ((midiPitch - minPitch) / (maxPitch - minPitch)) * 240;
 
       return {
         id: `${laneId}-${item.time.toFixed(2)}-${index}`,
@@ -50,7 +53,7 @@ export const Lane: React.FC<LaneProps> = React.memo(({
         width: Math.max(widthPixels, 2),
         time: item.time,
         duration: item.duration,
-        hue: Math.round(hue),
+        hue: Math.max(0, Math.min(240, Math.round(hue))), // Clamp 0-240
       };
     });
   }, [visibleNotes, pixelsPerSecond, laneId]);
