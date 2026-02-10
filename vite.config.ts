@@ -5,4 +5,8 @@ import react from '@vitejs/plugin-react-swc'
 export default defineConfig({
   plugins: [react()],
   base: '/canon-visualizer/',
+  define: {
+    'global': 'globalThis',
+    'process.env': {}
+  }
 })

@@ -1,51 +1,11 @@
-import React, { useRef, useEffect } from 'react';
-import * as Tone from 'tone';
+import React from 'react';
 import { Lane } from './Lane';
-import { canonMelody } from '../data/canonData';
 import { useCanonAudio } from '../hooks/useCanonAudio';
 
-const PIXELS_PER_SECOND = 150;
 const PLAYHEAD_X_PERCENT = 0.3; // 30% from the left
 
 export const Visualizer: React.FC = () => {
   const { isPlaying, start, stop, activeNotes } = useCanonAudio();
-  const lanesRef = useRef<(HTMLDivElement | null)[]>([]);
-  const requestRef = useRef<number>(0);
-  const playheadRef = useRef<HTMLDivElement>(null);
-
-  // Animation Loop
-  const animate = () => {
-    const now = Tone.Transport.seconds;
-
-    // Move the belts
-    // Current visual position = (Time * Speed)
-    // We want the note at "Time" to be at "Playhead".
-    // NotePos = NoteTime * Speed
-    // BeltOffset = PlayheadPos - (Time * Speed)
-    // So NoteScreenPos = NotePos + BeltOffset = NoteTime*Speed + Playhead - Time*Speed = (NoteTime - Time)*Speed + Playhead
-    // If NoteTime == Time, Pos = Playhead. Correct.
-
-    if (playheadRef.current) {
-      const playheadPixel = window.innerWidth * PLAYHEAD_X_PERCENT;
-      const transformValue = `translateX(${playheadPixel - (now * PIXELS_PER_SECOND)}px)`;
-
-      lanesRef.current.forEach(laneDiv => {
-        if (laneDiv) {
-          const belt = laneDiv.querySelector('.belt') as HTMLElement;
-          if (belt) {
-            belt.style.transform = transformValue;
-          }
-        }
-      });
-    }
-
-    requestRef.current = requestAnimationFrame(animate);
-  };
-
-  useEffect(() => {
-    requestRef.current = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(requestRef.current);
-  }, []);
 
   return (
     <div className="flex flex-col w-full h-screen bg-slate-900 text-white overflow-hidden">
@@ -78,47 +38,22 @@ export const Visualizer: React.FC = () => {
 
         {/* Playhead Line */}
         <div
-          ref={playheadRef}
           className="absolute top-0 bottom-0 w-1 bg-yellow-500 z-40 shadow-[0_0_10px_#eab308]"
           style={{ left: `${PLAYHEAD_X_PERCENT * 100}%` }}
         >
           <div className="absolute top-2 -left-3 text-xs text-yellow-500 font-mono">NOW</div>
         </div>
 
-        {/* Lanes */}
-        <div ref={el => { lanesRef.current[0] = el; }}>
-          <Lane
-            laneId={0}
-            melody={canonMelody}
-            offsetMeasure={0}
-            pixelsPerSecond={PIXELS_PER_SECOND}
-            activeNote={activeNotes[0]}
-          />
-        </div>
-        <div ref={el => { lanesRef.current[1] = el; }}>
-          <Lane
-            laneId={1}
-            melody={canonMelody}
-            offsetMeasure={2}
-            pixelsPerSecond={PIXELS_PER_SECOND}
-            activeNote={activeNotes[1]}
-          />
-        </div>
-        <div ref={el => { lanesRef.current[2] = el; }}>
-          <Lane
-            laneId={2}
-            melody={canonMelody}
-            offsetMeasure={4}
-            pixelsPerSecond={PIXELS_PER_SECOND}
-            activeNote={activeNotes[2]}
-          />
-        </div>
+        {/* Lanes - MIDI-driven visualization */}
+        <Lane laneId={0} activeNote={activeNotes[0]} label="Violin I" />
+        <Lane laneId={1} activeNote={activeNotes[1]} label="Violin II" />
+        <Lane laneId={2} activeNote={activeNotes[2]} label="Violin III" />
 
       </div>
 
       {/* Footer / Explanation */}
       <div className="p-4 text-center text-slate-500 text-sm">
-        <p>Demonstration of a Canon (Round) - The same melody starts at different times.</p>
+        <p>Demonstration of a Canon (Round) - Direct MIDI Playback with Visual Sync.</p>
       </div>
     </div>
   );
