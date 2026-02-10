@@ -14,7 +14,7 @@ interface LaneProps {
 export const Lane: React.FC<LaneProps> = ({ laneId, melody, offsetMeasure, pixelsPerSecond, activeNote }) => {
   // Convert melody times to pixel positions once
   const notesWithPosition = useMemo(() => {
-    const offsetSeconds = offsetMeasure * 4; // 1 measure = 4 seconds @ 60 BPM
+    const offsetSeconds = offsetMeasure * 2.5; // 1 measure = 2.5 seconds @ 96 BPM
     return melody.map((item, index) => {
       const startTime = parseTimeToSeconds(item.time) + offsetSeconds;
       const durationSeconds = getNoteDurationSeconds(item.duration);

@@ -29,7 +29,7 @@ export const useCanonAudio = () => {
 
   const initAudio = useCallback(async () => {
     await Tone.start();
-    Tone.Transport.bpm.value = 60; // 1 second per beat
+    Tone.Transport.bpm.value = 96; // Realistic Canon tempo (was 60, too slow)
 
     // Clear previous parts
     partsRef.current.forEach(part => part.dispose());
@@ -37,7 +37,7 @@ export const useCanonAudio = () => {
 
     // Lane Offsets (in measures)
     // Part 1: 0 measures
-    // Part 2: 2 measures
+    // Part 2: 2 measures  
     // Part 3: 4 measures
     const offsets = ["0:0:0", "2:0:0", "4:0:0"];
 
