@@ -11,83 +11,76 @@ export const Visualizer: React.FC = () => {
   const playheadPixels = window.innerWidth * PLAYHEAD_X_PERCENT;
 
   return (
-    <div className="flex flex-col w-full h-screen bg-slate-900 text-white overflow-hidden">
+    <div className="flex flex-col w-full h-screen bg-black text-stark-white overflow-hidden relative selection:bg-neon-lime selection:text-black">
+      <div className="scanline" />
+
       {/* Header / Controls */}
-      <div className="h-16 flex items-center justify-between px-8 bg-slate-950 border-b border-slate-800 z-50">
-        <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-teal-400">
-          Pachelbel's Canon Visualizer
+      <div className="h-20 flex items-center justify-between px-12 border-b-2 border-stark-white z-50 bg-black">
+        <h1 className="text-3xl font-black tracking-tighter uppercase italic">
+          <span className="text-neon-lime">Pachelbel's</span> <span className="line-through decoration-neon-pink">Canon</span>
         </h1>
-        <div className="space-x-4">
+        <div className="flex gap-6">
           {!isPlaying ? (
             <button
               onClick={start}
-              className="px-6 py-2 bg-green-500 hover:bg-green-600 rounded-full font-bold shadow-[0_0_15px_rgba(34,197,94,0.5)] transition-all"
+              className="px-8 py-3 bg-neon-lime text-black font-black uppercase text-xl border-4 border-black hover:bg-black hover:text-neon-lime hover:border-neon-lime transition-all glitch-hover cursor-crosshair"
             >
-              START
+              / START /
             </button>
           ) : (
             <button
               onClick={stop}
-              className="px-6 py-2 bg-red-500 hover:bg-red-600 rounded-full font-bold transition-all"
+              className="px-8 py-3 bg-neon-pink text-black font-black uppercase text-xl border-4 border-black hover:bg-black hover:text-neon-pink hover:border-neon-pink transition-all glitch-hover cursor-crosshair"
             >
-              STOP
+              [ STOP ]
             </button>
           )}
         </div>
       </div>
 
       {/* Visualizer Area */}
-      <div className="flex-1 relative flex flex-col justify-center gap-0">
+      <div className="flex-1 relative flex flex-col justify-center gap-2 px-8 py-12" style={{ transform: 'skewY(-1deg)' }}>
 
-        {/* Playhead Line */}
+        {/* Playhead Line - Jagged / Abstract */}
         <div
-          className="absolute top-0 bottom-0 w-1 bg-yellow-500 z-40 shadow-[0_0_10px_#eab308]"
+          className="absolute top-0 bottom-0 w-[2px] bg-stark-white z-40"
           style={{ left: `${PLAYHEAD_X_PERCENT * 100}%` }}
         >
-          <div className="absolute top-2 -left-6 text-xs text-yellow-500 font-mono font-bold">
-            NOW
+          <div className="absolute top-4 -left-12 text-lg font-black bg-stark-white text-black px-2 py-1 -rotate-90 origin-right">
+            EXECUTION
           </div>
+          <div className="absolute bottom-4 -left-12 text-lg font-black bg-neon-lime text-black px-2 py-1 -rotate-90 origin-right">
+            00:00:00
+          </div>
+          {/* Jagged elements */}
+          <div className="absolute top-1/4 -left-4 w-8 h-[2px] bg-neon-cyan" />
+          <div className="absolute top-2/4 -left-6 w-12 h-[2px] bg-neon-pink" />
+          <div className="absolute top-3/4 -left-2 w-4 h-[2px] bg-neon-lime" />
         </div>
 
         {/* Lanes - Conveyor belt visualization */}
-        <Lane
-          laneId={0}
-          melody={melodyTracks[0]}
-          currentTime={currentTime}
-          label="Violin I"
-          pixelsPerSecond={PIXELS_PER_SECOND}
-          playheadPosition={playheadPixels}
-        />
-        <Lane
-          laneId={1}
-          melody={melodyTracks[1]}
-          currentTime={currentTime}
-          label="Violin II"
-          pixelsPerSecond={PIXELS_PER_SECOND}
-          playheadPosition={playheadPixels}
-        />
-        <Lane
-          laneId={2}
-          melody={melodyTracks[2]}
-          currentTime={currentTime}
-          label="Violin III"
-          pixelsPerSecond={PIXELS_PER_SECOND}
-          playheadPosition={playheadPixels}
-        />
-        <Lane
-          laneId={3}
-          melody={melodyTracks[3]}
-          currentTime={currentTime}
-          label="Bass"
-          pixelsPerSecond={PIXELS_PER_SECOND}
-          playheadPosition={playheadPixels}
-        />
+        {melodyTracks.map((track, i) => (
+          <Lane
+            key={i}
+            laneId={i}
+            melody={track}
+            currentTime={currentTime}
+            label={['VOICE_I', 'VOICE_II', 'VOICE_III', 'CONTINUO'][i]}
+            pixelsPerSecond={PIXELS_PER_SECOND}
+            playheadPosition={playheadPixels}
+          />
+        ))}
 
       </div>
 
-      {/* Footer / Explanation */}
-      <div className="p-4 text-center text-slate-500 text-sm">
-        <p>Demonstrating Pachelbel's Canon - a musical round with staggered entries. Notes scroll to the NOW bar.</p>
+      {/* Footer / Info */}
+      <div className="p-6 border-t-2 border-stark-white bg-black z-50 flex justify-between items-center overflow-hidden">
+        <div className="text-xs font-mono uppercase tracking-[0.5em] text-slate-500 animate-pulse">
+          Digital Brutalism // Polyphony Glitch // Canon in D Major
+        </div>
+        <div className="text-xl font-black italic">
+          {currentTime.toFixed(3)}s
+        </div>
       </div>
     </div>
   );

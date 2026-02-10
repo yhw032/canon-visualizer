@@ -1,7 +1,84 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background: #0f172a;
-  --color-lane: #1e293b;
-  --color-gold: #d4af37;
+  --color-background: #000000;
+  --color-lane: #050505;
+  --color-neon-lime: #ccff00;
+  --color-neon-cyan: #00f0ff;
+  --color-neon-pink: #ff00ff;
+  --color-stark-white: #ffffff;
+}
+
+@layer base {
+  body {
+    @apply bg-background text-stark-white font-mono lowercase;
+    overflow: hidden;
+  }
+
+  /* Digital Noise Overlay */
+  body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: url('https://grainy-gradients.vercel.app/noise.svg');
+    opacity: 0.05;
+    pointer-events: none;
+    z-index: 9999;
+  }
+}
+
+@keyframes glitch {
+  0% {
+    transform: translate(0);
+  }
+
+  20% {
+    transform: translate(-2px, 2px);
+  }
+
+  40% {
+    transform: translate(-2px, -2px);
+  }
+
+  60% {
+    transform: translate(2px, 2px);
+  }
+
+  80% {
+    transform: translate(2px, -2px);
+  }
+
+  100% {
+    transform: translate(0);
+  }
+}
+
+@keyframes scanline {
+  0% {
+    transform: translateY(-100%);
+  }
+
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+.glitch-hover:hover {
+  animation: glitch 0.2s infinite;
+}
+
+.scanline {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: rgba(204, 255, 0, 0.2);
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 1000;
+  animation: scanline 8s linear infinite;
 }

@@ -32,19 +32,34 @@ export const Lane: React.FC<LaneProps> = React.memo(({
     });
   }, [melody, currentTime]);
 
-  // Convert notes to positioned boxes with pitch-based colors
+  // Convert notes to positioned boxes with pitch-based colors and Y-offsets
   const notesWithPosition = useMemo(() => {
     return visibleNotes.map((item, index) => {
       const startPixels = item.time * pixelsPerSecond;
       const widthPixels = item.duration * pixelsPerSecond;
 
-      // Convert note name to MIDI pitch for color mapping
+      // Convert note name to MIDI pitch
       const midiPitch = Tone.Frequency(item.note).toMidi();
-      // Canon's actual range is roughly D3 (50) to D6 (86)
-      // Map to full spectrum for vibrant colors
-      const minPitch = 50;  // D3
-      const maxPitch = 86;  // D6
-      const hue = 240 - ((midiPitch - minPitch) / (maxPitch - minPitch)) * 240;
+
+      // Pitch-to-Y Offset: Map D3(50) to D6(86) to range within lane
+      const minPitch = 50;
+      const maxPitch = 86;
+      const pitchRatio = (midiPitch - minPitch) / (maxPitch - minPitch);
+      // Higher pitch -> lower 'top' value (top of lane)
+      const topOffsetPercent = 85 - (pitchRatio * 70); // Keep notes between 15% and 85% height
+
+      // Pitch-to-Color Palette: Fixed neon colors for specific notes
+      const pitchClass = Tone.Frequency(item.note).toMidi() % 12; // 0=C, 1=C#, 2=D, ...
+      const colorMap: Record<number, string> = {
+        2: 'var(--color-neon-lime)',  // D
+        6: 'var(--color-neon-cyan)',  // F#
+        9: 'var(--color-neon-pink)',  // A
+        11: 'var(--color-stark-white)', // B
+        4: '#ff9900', // E (Amber)
+        7: '#99ff00', // G (Green-Lime)
+        1: '#ff0066', // C# (Red-Pink)
+      };
+      const pitchColor = colorMap[pitchClass] || 'var(--color-stark-white)';
 
       return {
         id: `${laneId}-${item.time.toFixed(2)}-${index}`,
@@ -53,7 +68,8 @@ export const Lane: React.FC<LaneProps> = React.memo(({
         width: Math.max(widthPixels, 2),
         time: item.time,
         duration: item.duration,
-        hue: Math.max(0, Math.min(240, Math.round(hue))), // Clamp 0-240
+        top: topOffsetPercent,
+        pitchColor,
       };
     });
   }, [visibleNotes, pixelsPerSecond, laneId]);
@@ -62,10 +78,17 @@ export const Lane: React.FC<LaneProps> = React.memo(({
   const transformX = playheadPosition - (currentTime * pixelsPerSecond);
 
   return (
-    <div className="relative w-full h-24 bg-slate-800/50 border-b border-slate-700 overflow-hidden">
-      {/* Lane Label */}
-      <div className="absolute left-4 top-1 text-slate-400 text-xs font-mono z-10">
-        {label}
+    <div className="relative w-full h-24 bg-black border-y border-stark-white/20 overflow-hidden mb-2">
+      {/* Lane Label - Rotated and repositioned */}
+      <div className="absolute right-4 bottom-1 text-stark-white font-black text-xs z-20 opacity-30 select-none">
+        {label} / CH_0{laneId}
+      </div>
+
+      {/* Background Grid Lines */}
+      <div className="absolute inset-0 opacity-10 pointer-events-none">
+        <div className="absolute top-1/2 left-0 w-full h-px bg-stark-white" />
+        <div className="absolute top-1/4 left-0 w-full h-px bg-stark-white" />
+        <div className="absolute top-3/4 left-0 w-full h-px bg-stark-white" />
       </div>
 
       {/* Conveyor Belt with Notes */}
@@ -83,23 +106,30 @@ export const Lane: React.FC<LaneProps> = React.memo(({
           return (
             <div
               key={noteBox.id}
-              className={`absolute top-1/2 -translate-y-1/2 h-16 ${isActive ? 'border-2 shadow-lg' : 'border'
+              className={`absolute h-4 transition-all duration-75 ${isActive
+                ? 'z-30 scale-y-150 shadow-[0_0_30px_rgba(255,255,255,0.4)]'
+                : 'z-20 opacity-60'
                 }`}
               style={{
+                top: `${noteBox.top}%`,
                 left: `${noteBox.left}px`,
                 width: `${noteBox.width}px`,
-                backgroundColor: isActive
-                  ? `hsl(${noteBox.hue}, 80%, 60%)`
-                  : `hsl(${noteBox.hue}, 60%, 35%)`,
-                borderColor: isActive
-                  ? `hsl(${noteBox.hue}, 90%, 70%)`
-                  : `hsl(${noteBox.hue}, 50%, 40%)`,
-                boxShadow: isActive
-                  ? `0 0 20px hsl(${noteBox.hue}, 80%, 60%)`
+                backgroundColor: isActive ? noteBox.pitchColor : 'transparent',
+                border: `2px solid ${noteBox.pitchColor}`,
+                mixBlendMode: 'screen',
+                clipPath: isActive
+                  ? 'polygon(0% 0%, 100% 0%, 95% 100%, 5% 100%)'
                   : 'none',
+                transform: 'translateY(-50%)'
               }}
             >
-              <span className="absolute inset-0 flex items-center justify-center text-xs font-mono text-white select-none">
+              {isActive && (
+                <div
+                  className="absolute inset-0 bg-white opacity-40 animate-pulse"
+                  style={{ mixBlendMode: 'overlay' }}
+                />
+              )}
+              <span className={`absolute -top-5 left-0 text-[10px] font-black uppercase tracking-tighter ${isActive ? 'text-stark-white' : 'text-stark-white/40'}`}>
                 {noteBox.note}
               </span>
             </div>
