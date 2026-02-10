@@ -20,13 +20,31 @@ export const useCanonAudio = () => {
   const animationFrameRef = useRef<number | null>(null);
   const lastUpdateTime = useRef<number>(0);
 
-  // Initialize Synth
+  // Initialize Synth with FM synthesis for more violin-like sound
   useEffect(() => {
-    const synth = new Tone.PolySynth(Tone.Synth, {
-      oscillator: { type: 'triangle' },
-      envelope: { attack: 0.05, decay: 0.1, sustain: 0.3, release: 1 },
+    const synth = new Tone.PolySynth(Tone.FMSynth, {
+      harmonicity: 3.01, // Slightly detuned for organic sound
+      modulationIndex: 14,
+      oscillator: {
+        type: 'triangle'
+      },
+      envelope: {
+        attack: 0.02,
+        decay: 0.1,
+        sustain: 0.4,
+        release: 0.8
+      },
+      modulation: {
+        type: 'square'
+      },
+      modulationEnvelope: {
+        attack: 0.01,
+        decay: 0.2,
+        sustain: 0.3,
+        release: 0.5
+      }
     }).toDestination();
-    synth.volume.value = -6;
+    synth.volume.value = -8; // Slightly quieter for FM
     synthRef.current = synth;
 
     return () => {

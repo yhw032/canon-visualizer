@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { NoteData } from '../hooks/useCanonAudio';
+import * as Tone from 'tone';
 
 interface LaneProps {
   laneId: number;
@@ -31,19 +32,25 @@ export const Lane: React.FC<LaneProps> = React.memo(({
     });
   }, [melody, currentTime]);
 
-  // Convert notes to positioned boxes
+  // Convert notes to positioned boxes with pitch-based colors
   const notesWithPosition = useMemo(() => {
     return visibleNotes.map((item, index) => {
       const startPixels = item.time * pixelsPerSecond;
       const widthPixels = item.duration * pixelsPerSecond;
 
+      // Convert note name to MIDI pitch for color mapping
+      const midiPitch = Tone.Frequency(item.note).toMidi();
+      // Map MIDI pitch (21-108) to hue (240° blue for low notes, 0° red for high notes)
+      const hue = 240 - ((midiPitch - 21) / (108 - 21)) * 240;
+
       return {
-        id: `${laneId}-${item.time.toFixed(2)}-${index}`, // Stable key using time
+        id: `${laneId}-${item.time.toFixed(2)}-${index}`,
         note: item.note,
         left: startPixels,
-        width: Math.max(widthPixels, 2), // Minimum 2px width
+        width: Math.max(widthPixels, 2),
         time: item.time,
         duration: item.duration,
+        hue: Math.round(hue),
       };
     });
   }, [visibleNotes, pixelsPerSecond, laneId]);
@@ -73,13 +80,20 @@ export const Lane: React.FC<LaneProps> = React.memo(({
           return (
             <div
               key={noteBox.id}
-              className={`absolute top-1/2 -translate-y-1/2 h-16 rounded ${isActive
-                  ? 'bg-gradient-to-r from-blue-500 to-teal-500 border-2 border-blue-300 shadow-lg shadow-blue-500/50'
-                  : 'bg-blue-900/40 border border-blue-700/50'
+              className={`absolute top-1/2 -translate-y-1/2 h-16 rounded ${isActive ? 'border-2 shadow-lg' : 'border'
                 }`}
               style={{
                 left: `${noteBox.left}px`,
                 width: `${noteBox.width}px`,
+                backgroundColor: isActive
+                  ? `hsl(${noteBox.hue}, 80%, 60%)`
+                  : `hsl(${noteBox.hue}, 60%, 35%)`,
+                borderColor: isActive
+                  ? `hsl(${noteBox.hue}, 90%, 70%)`
+                  : `hsl(${noteBox.hue}, 50%, 40%)`,
+                boxShadow: isActive
+                  ? `0 0 20px hsl(${noteBox.hue}, 80%, 60%)`
+                  : 'none',
               }}
             >
               <span className="absolute inset-0 flex items-center justify-center text-xs font-mono text-white select-none">
