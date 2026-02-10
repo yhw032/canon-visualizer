@@ -18,6 +18,7 @@ export const useCanonAudio = () => {
   const partsRef = useRef<Tone.Part[]>([]);
   const midiDataRef = useRef<any>(null);
   const animationFrameRef = useRef<number | null>(null);
+  const lastUpdateTime = useRef<number>(0);
 
   // Initialize Synth
   useEffect(() => {
@@ -90,7 +91,7 @@ export const useCanonAudio = () => {
         });
 
         setMelodyTracks(extractedTracks);
-        console.log('Tracks extracted:', extractedTracks.map((t, i) => `Track ${i}: ${t.length} notes`));
+        console.log('Tracks extracted:', extractedTracks.map((t, i) => `Lane ${i}: ${t.length} notes`));
       } catch (error) {
         console.error('Error loading MIDI:', error);
       }
@@ -112,7 +113,6 @@ export const useCanonAudio = () => {
     partsRef.current = [];
 
     const midi = midiDataRef.current;
-    const ppq = midi.timeDivision;
 
     // Find tempo
     let microsecondsPerBeat = 500000;
@@ -151,10 +151,15 @@ export const useCanonAudio = () => {
     console.log('Audio parts created:', partsRef.current.length);
   }, [melodyTracks]);
 
-  // Animation loop for conveyor belt
+  // Animation loop for conveyor belt (throttled to ~60 FPS)
   const animate = useCallback(() => {
     if (Tone.Transport.state === 'started') {
-      setCurrentTime(Tone.Transport.seconds);
+      const now = performance.now();
+      // Throttle to ~60 FPS (16.67ms per frame)
+      if (now - lastUpdateTime.current >= 16) {
+        setCurrentTime(Tone.Transport.seconds);
+        lastUpdateTime.current = now;
+      }
       animationFrameRef.current = requestAnimationFrame(animate);
     }
   }, []);
