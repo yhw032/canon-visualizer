@@ -83,7 +83,7 @@ export const Lane: React.FC<LaneProps> = React.memo(({
           return (
             <div
               key={noteBox.id}
-              className={`absolute top-1/2 -translate-y-1/2 h-16 rounded ${isActive ? 'border-2 shadow-lg' : 'border'
+              className={`absolute top-1/2 -translate-y-1/2 h-16 ${isActive ? 'border-2 shadow-lg' : 'border'
                 }`}
               style={{
                 left: `${noteBox.left}px`,

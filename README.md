@@ -1,73 +1,136 @@
-# React + TypeScript + Vite
+# 🎵 Canon Visualizer
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A real-time interactive visualization of **Pachelbel's Canon in D Major** with MIDI playback.
 
-Currently, two official plugins are available:
+![Demo](https://img.shields.io/badge/Status-Complete-success)
+![License](https://img.shields.io/badge/License-MIT-blue)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## ✨ Features
 
-## React Compiler
+- **🎹 Direct MIDI Playback** - Plays the full Canon using Tone.js from MIDI file
+- **🎨 Pitch-Based Colors** - Notes are colored by pitch (blue=low, red=high)
+- **📊 Conveyor Belt Visualization** - All notes scroll towards a "NOW" bar
+- **🎻 Violin Sound** - FM synthesis creates organic, string-like tones
+- **⚡ Performance Optimized** - Viewport culling keeps 60 FPS even with 3000+ notes
+- **🎼 4-Part Canon** - Visualizes Violin I, II, III, and Bass simultaneously
 
-The React Compiler is currently not compatible with SWC. See [this issue](https://github.com/vitejs/vite-plugin-react/issues/428) for tracking the progress.
+## 🚀 Getting Started
 
-## Expanding the ESLint configuration
+### Prerequisites
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- Node.js 16+ and npm
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### Installation
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+```bash
+# Clone the repository
+git clone <your-repo-url>
+cd canon-visualizer
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Visit `http://localhost:5173/canon-visualizer/` in your browser.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Build for Production
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run build
 ```
+
+## 🎮 How to Use
+
+1. Click the **START** button
+2. Watch as notes scroll from right to left
+3. Notes light up and play when they reach the yellow **NOW** bar
+4. Click **STOP** to pause playback
+
+## 🎨 Color Guide
+
+Notes are colored based on their pitch:
+
+- 🔵 **Blue** - Low notes (D3-F4)
+- 🟢 **Green/Yellow** - Mid notes (F#4-A5)
+- 🔴 **Red** - High notes (A#5-D6)
+
+## 🛠️ Tech Stack
+
+**Frontend:**
+- React 18 with TypeScript
+- Vite for build tooling
+- Tailwind CSS v4 for styling
+
+**Audio:**
+- [Tone.js](https://tonejs.github.io/) - Web Audio framework
+- [midi-parser-js](https://github.com/colxi/midi-parser-js) - MIDI file parsing
+- FMSynth for violin-like sound
+
+**Performance:**
+- React.memo for component optimization
+- Viewport culling (renders only ±15s of notes)
+- 60 FPS throttled animation loop
+
+## 📁 Project Structure
+
+```
+canon-visualizer/
+├── public/
+│   └── canon.mid               # MIDI file
+├── src/
+│   ├── components/
+│   │   ├── Lane.tsx            # Individual instrument lane
+│   │   └── Visualizer.tsx      # Main UI and NOW bar
+│   ├── hooks/
+│   │   └── useCanonAudio.ts    # MIDI parsing & playback
+│   ├── types/
+│   │   └── midi-parser-js.d.ts # TypeScript definitions
+│   ├── App.tsx
+│   └── main.tsx
+└── package.json
+```
+
+## 🎼 Music Theory
+
+**Pachelbel's Canon** is a musical round where:
+- The same melody is played by multiple voices
+- Each voice starts at a different time (staggered entries)
+  - Violin I: starts at 8 beats
+  - Violin II: starts at 16 beats  
+  - Violin III: starts at 24 beats
+  - Bass: starts at 0 beats
+
+This visualization makes these relationships visible!
+
+## 🔧 Configuration
+
+To customize the visualization, edit these values in `Visualizer.tsx`:
+
+```typescript
+const PIXELS_PER_SECOND = 100;  // Scroll speed
+const PLAYHEAD_X_PERCENT = 0.3; // NOW bar position (30% from left)
+```
+
+## 🐛 Known Issues
+
+- Some browsers may require user interaction before playing audio (Web Audio policy)
+- Mobile devices not optimized
+
+## 📝 License
+
+MIT License - feel free to use this project for learning or inspiration!
+
+## 🙏 Acknowledgments
+
+- MIDI file: Pachelbel's Canon in D Major
+- Inspired by classic music visualizers
+- Built with modern web technologies
+
+---
+
+**Enjoy the visualization!** 🎶
+
+If you have any questions or suggestions, feel free to open an issue.
