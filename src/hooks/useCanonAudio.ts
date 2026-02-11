@@ -9,104 +9,104 @@ export interface NoteData {
   velocity: number;
 }
 
-export type InstrumentType = 'violin' | 'piano';
+export type InstrumentType = 'strings' | 'piano';
 
 export const useCanonAudio = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [melodyTracks, setMelodyTracks] = useState<NoteData[][]>([[], [], [], []]);
-  const [instrument, setInstrument] = useState<InstrumentType>('violin');
-  const [isPianoLoading, setIsPianoLoading] = useState(false);
+  const [instrument, setInstrument] = useState<InstrumentType>('strings');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const synthRef = useRef<Tone.Sampler | Tone.PolySynth | null>(null);
+  // Store active instruments (one per lane)
+  const instrumentsRef = useRef<(Tone.Sampler | null)[]>([null, null, null, null]);
+  const reverbRef = useRef<Tone.Reverb | null>(null);
   const partsRef = useRef<Tone.Part[]>([]);
   const midiDataRef = useRef<any>(null);
   const animationFrameRef = useRef<number | null>(null);
   const lastUpdateTime = useRef<number>(0);
 
-  // Initialize/Update Synth based on instrument type
+  // Initialize/Update Instruments based on mode
   useEffect(() => {
-    if (synthRef.current) {
-      synthRef.current.dispose();
-      synthRef.current = null;
+    // Cleanup previous instruments and reverb
+    instrumentsRef.current.forEach(inst => inst?.dispose());
+    instrumentsRef.current = [null, null, null, null];
+    if (reverbRef.current) {
+      reverbRef.current.dispose();
+      reverbRef.current = null;
     }
 
-    if (instrument === 'piano') {
-      setIsPianoLoading(true);
-      // High quality sampled piano using Tone.Sampler
-      const sampler = new Tone.Sampler({
-        urls: {
-          A0: "A0.mp3",
-          C1: "C1.mp3",
-          "D#1": "Ds1.mp3",
-          "F#1": "Fs1.mp3",
-          A1: "A1.mp3",
-          C2: "C2.mp3",
-          "D#2": "Ds2.mp3",
-          "F#2": "Fs2.mp3",
-          A2: "A2.mp3",
-          C3: "C3.mp3",
-          "D#3": "Ds3.mp3",
-          "F#3": "Fs3.mp3",
-          A3: "A3.mp3",
-          C4: "C4.mp3",
-          "D#4": "Ds4.mp3",
-          "F#4": "Fs4.mp3",
-          A4: "A4.mp3",
-          C5: "C5.mp3",
-          "D#5": "Ds5.mp3",
-          "F#5": "Fs5.mp3",
-          A5: "A5.mp3",
-          C6: "C6.mp3",
-          "D#6": "Ds6.mp3",
-          "F#6": "Fs6.mp3",
-          A6: "A6.mp3",
-          C7: "C7.mp3",
-          "D#7": "Ds7.mp3",
-          "F#7": "Fs7.mp3",
-          A7: "A7.mp3",
-          C8: "C8.mp3"
-        },
-        baseUrl: "https://tonejs.github.io/audio/salamander/",
-        onload: () => {
-          setIsPianoLoading(false);
-          console.log('Piano samples loaded');
-        },
-        onerror: (err) => {
-          setIsPianoLoading(false);
-          console.error('Error loading piano samples:', err);
+    const loadSampler = (urls: any, baseUrl: string, volume: number, attack: number, release: number): Promise<Tone.Sampler> => {
+      return new Promise((resolve, reject) => {
+        const sampler = new Tone.Sampler({
+          urls,
+          baseUrl,
+          attack,
+          release,
+          onload: () => resolve(sampler),
+          onerror: (err) => reject(err)
+        });
+        sampler.volume.value = volume;
+      });
+    };
+
+    const initInstruments = async () => {
+      setIsLoading(true);
+      try {
+        // Create professional Hall Reverb for blending
+        const reverb = new Tone.Reverb({
+          decay: 2.5,
+          preDelay: 0.05,
+          wet: 0.35 // 35% wet for a lush feel
+        }).toDestination();
+        await reverb.generate(); // Pre-generate the impulse response
+        reverbRef.current = reverb;
+
+        if (instrument === 'piano') {
+          const piano = await loadSampler({
+            A0: "A0.mp3", C1: "C1.mp3", "D#1": "Ds1.mp3", "F#1": "Fs1.mp3",
+            A1: "A1.mp3", C2: "C2.mp3", "D#2": "Ds2.mp3", "F#2": "Fs2.mp3",
+            A2: "A2.mp3", C3: "C3.mp3", "D#3": "Ds3.mp3", "F#3": "Fs3.mp3",
+            A3: "A3.mp3", C4: "C4.mp3", "D#4": "Ds4.mp3", "F#4": "Fs4.mp3",
+            A4: "A4.mp3", C5: "C5.mp3", "D#5": "Ds5.mp3", "F#5": "Fs5.mp3",
+            A5: "A5.mp3", C6: "C6.mp3", "D#6": "Ds6.mp3", "F#6": "Fs6.mp3",
+            A6: "A6.mp3", C7: "C7.mp3", "D#7": "Ds7.mp3", "F#7": "Fs7.mp3",
+            A7: "A7.mp3", C8: "C8.mp3"
+          }, "https://tonejs.github.io/audio/salamander/", -4, 0.01, 1.0);
+
+          piano.connect(reverb);
+          instrumentsRef.current = [piano, piano, piano, piano];
+        } else {
+          // Strings Ensemble (Lanes 0-2: Violin, Lane 3: Cello)
+          const [violin, cello] = await Promise.all([
+            loadSampler({
+              A3: "A3.mp3", C4: "C4.mp3", E4: "E4.mp3", G4: "G4.mp3",
+              A4: "A4.mp3", C5: "C5.mp3", E5: "E5.mp3", G5: "G5.mp3",
+              A5: "A5.mp3", C6: "C6.mp3"
+            }, "https://nbrosowsky.github.io/tonejs-instruments/samples/violin/", -2, 0.05, 1.5), // Lush release for legate
+            loadSampler({
+              A2: "A2.mp3", C2: "C2.mp3", E2: "E2.mp3", G2: "G2.mp3",
+              A3: "A3.mp3", C3: "C3.mp3", E3: "E3.mp3", G3: "G3.mp3"
+            }, "https://nbrosowsky.github.io/tonejs-instruments/samples/cello/", 0, 0.08, 1.8) // Even longer release for cello bass
+          ]);
+
+          violin.connect(reverb);
+          cello.connect(reverb);
+          instrumentsRef.current = [violin, violin, violin, cello];
         }
-      }).toDestination();
-      sampler.volume.value = -4;
-      synthRef.current = sampler;
-    } else {
-      // FM Synthesis for violin-like sound
-      const violin = new Tone.PolySynth(Tone.FMSynth, {
-        harmonicity: 3.01,
-        modulationIndex: 14,
-        oscillator: { type: 'triangle' },
-        envelope: {
-          attack: 0.02,
-          decay: 0.1,
-          sustain: 0.4,
-          release: 0.8
-        },
-        modulation: { type: 'square' },
-        modulationEnvelope: {
-          attack: 0.01,
-          decay: 0.2,
-          sustain: 0.3,
-          release: 0.5
-        }
-      }).toDestination();
-      violin.volume.value = -8;
-      synthRef.current = violin;
-    }
+        console.log(`Instruments with Reverb loaded for ${instrument} mode`);
+      } catch (err) {
+        console.error('Error loading instruments:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initInstruments();
 
     return () => {
-      if (synthRef.current) {
-        synthRef.current.dispose();
-      }
+      instrumentsRef.current.forEach(inst => inst?.dispose());
+      reverbRef.current?.dispose();
     };
   }, [instrument]);
 
@@ -180,8 +180,8 @@ export const useCanonAudio = () => {
   }, []);
 
   const initAudio = useCallback(async () => {
-    if (!midiDataRef.current || !synthRef.current) {
-      console.warn('MIDI data or synth not ready');
+    if (!midiDataRef.current || instrumentsRef.current.every(inst => inst === null)) {
+      console.warn('MIDI data or instruments not ready');
       return;
     }
 
@@ -208,12 +208,13 @@ export const useCanonAudio = () => {
     Tone.Transport.bpm.value = bpm;
 
     // Create playback parts for each track (tracks 1-4)
-    melodyTracks.forEach((notes) => {
+    melodyTracks.forEach((notes, laneIndex) => {
       if (notes.length === 0) return;
 
       const part = new Tone.Part((time, value) => {
-        if (synthRef.current) {
-          synthRef.current.triggerAttackRelease(
+        const inst = instrumentsRef.current[laneIndex];
+        if (inst) {
+          inst.triggerAttackRelease(
             value.note,
             value.duration,
             time,
@@ -254,9 +255,7 @@ export const useCanonAudio = () => {
 
   const stop = useCallback(() => {
     Tone.Transport.stop();
-    if (synthRef.current) {
-      synthRef.current.releaseAll();
-    }
+    instrumentsRef.current.forEach(inst => inst?.releaseAll());
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
     }
@@ -264,5 +263,5 @@ export const useCanonAudio = () => {
     setCurrentTime(0);
   }, []);
 
-  return { isPlaying, start, stop, currentTime, melodyTracks, instrument, setInstrument, isPianoLoading };
+  return { isPlaying, start, stop, currentTime, melodyTracks, instrument, setInstrument, isLoading };
 };
