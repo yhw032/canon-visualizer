@@ -61,15 +61,18 @@ export const useCanonAudio = () => {
         const response = await fetch(midiUrl);
         const arrayBuffer = await response.arrayBuffer();
         const midiData = MidiParser.parse(new Uint8Array(arrayBuffer));
+        if (!midiData) {
+          throw new Error('Failed to parse MIDI data');
+        }
         console.log('MIDI loaded:', midiData);
         midiDataRef.current = midiData;
 
         // Extract notes from MIDI for visualization
         const extractedTracks: NoteData[][] = [[], [], [], []];
-        const ppq = midiData.timeDivision;
+        const ppq = (midiData as any).timeDivision;
 
         // Process tracks 1-4 (Track 0 is metadata)
-        midiData.track.slice(1, 5).forEach((track: any, index: number) => {
+        (midiData as any).track.slice(1, 5).forEach((track: any, index: number) => {
           let currentTicks = 0;
 
           track.event.forEach((event: any) => {
@@ -130,12 +133,12 @@ export const useCanonAudio = () => {
     partsRef.current.forEach(part => part.dispose());
     partsRef.current = [];
 
-    const midi = midiDataRef.current;
+    const parsedMidi = midiDataRef.current;
 
     // Find tempo
     let microsecondsPerBeat = 500000;
-    if (midi.track[0]) {
-      for (const event of midi.track[0].event) {
+    if (parsedMidi && parsedMidi.track[0]) {
+      for (const event of parsedMidi.track[0].event) {
         if (event.type === 255 && event.data && event.data[0] === 81) {
           microsecondsPerBeat = (event.data[1] << 16) | (event.data[2] << 8) | event.data[3];
           break;
@@ -147,7 +150,7 @@ export const useCanonAudio = () => {
     Tone.Transport.bpm.value = bpm;
 
     // Create playback parts for each track (tracks 1-4)
-    melodyTracks.forEach((notes, laneIndex) => {
+    melodyTracks.forEach((notes) => {
       if (notes.length === 0) return;
 
       const part = new Tone.Part((time, value) => {

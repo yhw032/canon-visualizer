@@ -2,9 +2,6 @@
 
 A real-time interactive visualization of **Pachelbel's Canon in D Major** with MIDI playback.
 
-![Demo](https://img.shields.io/badge/Status-Complete-success)
-![License](https://img.shields.io/badge/License-MIT-blue)
-
 ## ✨ Features
 
 - **🎹 Direct MIDI Playback** - Plays the full Canon using Tone.js from MIDI file

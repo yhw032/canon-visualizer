@@ -1,18 +1,10 @@
-import type { NoteData } from '../data/canonData';
+interface ReferenceNoteData {
+  time: string;
+  note: string;
+  duration: string;
+}
 
-/**
- * Extracted from Pachelbel's Canon MIDI (Violino I track)
- * Original MIDI: PPQ=240, BPM=40 starting
- * Converted to: 60 BPM, 4/4 time signature for visualization
- * 
- * Conversion logic:
- * - Original starts at tick 1920 (12 seconds @ BPM 40)
- * - At 40 BPM: 1 beat = 1.5 seconds, so 12 seconds = 8 measures
- * - Normalized to start at measure 0 for canon visualization
- * - Duration mapping: 238 ticks (~1.5s) → 2n, 118 ticks (~0.75s) → 4n, 58 ticks → 8n
- */
-
-export const canonMelodyFromMidi: NoteData[] = [
+export const canonMelodyFromMidi: ReferenceNoteData[] = [
   // Measures 1-2: Opening theme (Half notes)
   { time: "0:0:0", note: "F#5", duration: "2n" },
   { time: "0:2:0", note: "E5", duration: "2n" },
