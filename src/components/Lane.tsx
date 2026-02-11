@@ -20,14 +20,16 @@ export const Lane: React.FC<LaneProps> = React.memo(({
   playheadPosition
 }) => {
   // Viewport culling: only render notes within visible time range
-  // This dramatically reduces DOM nodes from 3000+ to ~50-100
+  // Optimization: use binary search or simple indexing if possible, 
+  // but even O(N) filter is usually okay for 3000. 
+  // Let's refine the CSS performance which is the likely bottleneck.
   const visibleNotes = useMemo(() => {
-    const viewportTimeStart = currentTime - 15; // 15 seconds before NOW
-    const viewportTimeEnd = currentTime + 15;   // 15 seconds after NOW
+    const viewportTimeStart = currentTime - 8; // Narrower window for better performance
+    const viewportTimeEnd = currentTime + 15;
 
+    // Use filter but focus on keeping the DOM small
     return melody.filter(item => {
       const noteEndTime = item.time + item.duration;
-      // Only include notes that overlap with viewport
       return noteEndTime >= viewportTimeStart && item.time <= viewportTimeEnd;
     });
   }, [melody, currentTime]);
@@ -49,7 +51,7 @@ export const Lane: React.FC<LaneProps> = React.memo(({
       const topOffsetPercent = 85 - (pitchRatio * 70); // Keep notes between 15% and 85% height
 
       // Pitch-to-Color Palette: Fixed neon colors for specific notes
-      const pitchClass = Tone.Frequency(item.note).toMidi() % 12; // 0=C, 1=C#, 2=D, ...
+      const pitchClass = midiPitch % 12; // 0=C, 1=C#, 2=D, ...
       const colorMap: Record<number, string> = {
         2: 'var(--color-neon-lime)',  // D
         6: 'var(--color-neon-cyan)',  // F#
@@ -95,7 +97,7 @@ export const Lane: React.FC<LaneProps> = React.memo(({
       <div
         className="absolute top-0 left-0 h-full"
         style={{
-          transform: `translateX(${transformX}px)`,
+          transform: `translateX(${transformX}px) translateZ(0)`, // Force GPU layer
           willChange: 'transform'
         }}
       >
@@ -106,21 +108,23 @@ export const Lane: React.FC<LaneProps> = React.memo(({
           return (
             <div
               key={noteBox.id}
-              className={`absolute h-4 transition-all duration-75 ${isActive
-                ? 'z-30 scale-y-150 shadow-[0_0_30px_rgba(255,255,255,0.4)]'
-                : 'z-20 opacity-60'
+              className={`absolute h-4 transition-transform duration-75 ${isActive ? 'z-30' : 'z-20'
                 }`}
               style={{
                 top: `${noteBox.top}%`,
                 left: `${noteBox.left}px`,
                 width: `${noteBox.width}px`,
-                backgroundColor: isActive ? noteBox.pitchColor : 'transparent',
-                border: `2px solid ${noteBox.pitchColor}`,
+                // Keep the fill but make it much more visible (40% vs 20%)
+                backgroundColor: isActive
+                  ? noteBox.pitchColor
+                  : `${noteBox.pitchColor}66`,
+                border: `2px solid ${isActive ? 'white' : noteBox.pitchColor}`,
                 mixBlendMode: 'screen',
+                boxShadow: isActive ? `0 0 30px ${noteBox.pitchColor}` : 'none',
+                transform: `translateY(-50%) ${isActive ? 'scaleY(1.8)' : 'scaleY(1)'}`,
                 clipPath: isActive
                   ? 'polygon(0% 0%, 100% 0%, 95% 100%, 5% 100%)'
                   : 'none',
-                transform: 'translateY(-50%)'
               }}
             >
               {isActive && (
@@ -129,7 +133,8 @@ export const Lane: React.FC<LaneProps> = React.memo(({
                   style={{ mixBlendMode: 'overlay' }}
                 />
               )}
-              <span className={`absolute -top-5 left-0 text-[10px] font-black uppercase tracking-tighter ${isActive ? 'text-stark-white' : 'text-stark-white/40'}`}>
+              <span className={`absolute -top-5 left-0 text-[10px] font-black uppercase tracking-tighter ${isActive ? 'text-stark-white' : 'text-stark-white/60'
+                }`}>
                 {noteBox.note}
               </span>
             </div>

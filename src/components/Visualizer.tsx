@@ -39,11 +39,11 @@ export const Visualizer: React.FC = () => {
       </div>
 
       {/* Visualizer Area */}
-      <div className="flex-1 relative flex flex-col justify-center gap-2 px-8 py-12" style={{ transform: 'skewY(-1deg)' }}>
+      <div className="flex-1 relative flex flex-col justify-center gap-2 px-8 py-10" style={{ transform: 'skewY(-1deg)' }}>
 
         {/* Playhead Line - Jagged / Abstract */}
         <div
-          className="absolute top-0 bottom-0 w-[2px] bg-stark-white z-40"
+          className="absolute top-0 bottom-0 w-[2px] bg-stark-white z-40 shadow-[0_0_15px_white]"
           style={{ left: `${PLAYHEAD_X_PERCENT * 100}%` }}
         >
           <div className="absolute top-4 -left-12 text-lg font-black bg-stark-white text-black px-2 py-1 -rotate-90 origin-right">
