@@ -18,7 +18,7 @@ export const useCanonAudio = () => {
   const [instrument, setInstrument] = useState<InstrumentType>('violin');
   const [isPianoLoading, setIsPianoLoading] = useState(false);
 
-  const synthRef = useRef<Tone.Instrument | null>(null);
+  const synthRef = useRef<Tone.Sampler | Tone.PolySynth | null>(null);
   const partsRef = useRef<Tone.Part[]>([]);
   const midiDataRef = useRef<any>(null);
   const animationFrameRef = useRef<number | null>(null);
