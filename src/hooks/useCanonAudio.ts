@@ -9,48 +9,106 @@ export interface NoteData {
   velocity: number;
 }
 
+export type InstrumentType = 'violin' | 'piano';
+
 export const useCanonAudio = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [melodyTracks, setMelodyTracks] = useState<NoteData[][]>([[], [], [], []]);
+  const [instrument, setInstrument] = useState<InstrumentType>('violin');
+  const [isPianoLoading, setIsPianoLoading] = useState(false);
 
-  const synthRef = useRef<Tone.PolySynth | null>(null);
+  const synthRef = useRef<Tone.Instrument | null>(null);
   const partsRef = useRef<Tone.Part[]>([]);
   const midiDataRef = useRef<any>(null);
   const animationFrameRef = useRef<number | null>(null);
   const lastUpdateTime = useRef<number>(0);
 
-  // Initialize Synth with FM synthesis for more violin-like sound
+  // Initialize/Update Synth based on instrument type
   useEffect(() => {
-    const synth = new Tone.PolySynth(Tone.FMSynth, {
-      harmonicity: 3.01, // Slightly detuned for organic sound
-      modulationIndex: 14,
-      oscillator: {
-        type: 'triangle'
-      },
-      envelope: {
-        attack: 0.02,
-        decay: 0.1,
-        sustain: 0.4,
-        release: 0.8
-      },
-      modulation: {
-        type: 'square'
-      },
-      modulationEnvelope: {
-        attack: 0.01,
-        decay: 0.2,
-        sustain: 0.3,
-        release: 0.5
-      }
-    }).toDestination();
-    synth.volume.value = -8; // Slightly quieter for FM
-    synthRef.current = synth;
+    if (synthRef.current) {
+      synthRef.current.dispose();
+      synthRef.current = null;
+    }
+
+    if (instrument === 'piano') {
+      setIsPianoLoading(true);
+      // High quality sampled piano using Tone.Sampler
+      const sampler = new Tone.Sampler({
+        urls: {
+          A0: "A0.mp3",
+          C1: "C1.mp3",
+          "D#1": "Ds1.mp3",
+          "F#1": "Fs1.mp3",
+          A1: "A1.mp3",
+          C2: "C2.mp3",
+          "D#2": "Ds2.mp3",
+          "F#2": "Fs2.mp3",
+          A2: "A2.mp3",
+          C3: "C3.mp3",
+          "D#3": "Ds3.mp3",
+          "F#3": "Fs3.mp3",
+          A3: "A3.mp3",
+          C4: "C4.mp3",
+          "D#4": "Ds4.mp3",
+          "F#4": "Fs4.mp3",
+          A4: "A4.mp3",
+          C5: "C5.mp3",
+          "D#5": "Ds5.mp3",
+          "F#5": "Fs5.mp3",
+          A5: "A5.mp3",
+          C6: "C6.mp3",
+          "D#6": "Ds6.mp3",
+          "F#6": "Fs6.mp3",
+          A6: "A6.mp3",
+          C7: "C7.mp3",
+          "D#7": "Ds7.mp3",
+          "F#7": "Fs7.mp3",
+          A7: "A7.mp3",
+          C8: "C8.mp3"
+        },
+        baseUrl: "https://tonejs.github.io/audio/salamander/",
+        onload: () => {
+          setIsPianoLoading(false);
+          console.log('Piano samples loaded');
+        },
+        onerror: (err) => {
+          setIsPianoLoading(false);
+          console.error('Error loading piano samples:', err);
+        }
+      }).toDestination();
+      sampler.volume.value = -4;
+      synthRef.current = sampler;
+    } else {
+      // FM Synthesis for violin-like sound
+      const violin = new Tone.PolySynth(Tone.FMSynth, {
+        harmonicity: 3.01,
+        modulationIndex: 14,
+        oscillator: { type: 'triangle' },
+        envelope: {
+          attack: 0.02,
+          decay: 0.1,
+          sustain: 0.4,
+          release: 0.8
+        },
+        modulation: { type: 'square' },
+        modulationEnvelope: {
+          attack: 0.01,
+          decay: 0.2,
+          sustain: 0.3,
+          release: 0.5
+        }
+      }).toDestination();
+      violin.volume.value = -8;
+      synthRef.current = violin;
+    }
 
     return () => {
-      synth.dispose();
+      if (synthRef.current) {
+        synthRef.current.dispose();
+      }
     };
-  }, []);
+  }, [instrument]);
 
   // Load MIDI file and extract notes
   useEffect(() => {
@@ -206,5 +264,5 @@ export const useCanonAudio = () => {
     setCurrentTime(0);
   }, []);
 
-  return { isPlaying, start, stop, currentTime, melodyTracks };
+  return { isPlaying, start, stop, currentTime, melodyTracks, instrument, setInstrument, isPianoLoading };
 };

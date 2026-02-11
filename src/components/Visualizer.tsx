@@ -6,9 +6,13 @@ const PIXELS_PER_SECOND = 100; // Adjust scrolling speed
 const PLAYHEAD_X_PERCENT = 0.3; // 30% from the left
 
 export const Visualizer: React.FC<{ theme: 'dark' | 'light'; toggleTheme: () => void }> = ({ theme, toggleTheme }) => {
-  const { isPlaying, start, stop, currentTime, melodyTracks } = useCanonAudio();
+  const { isPlaying, start, stop, currentTime, melodyTracks, instrument, setInstrument, isPianoLoading } = useCanonAudio();
 
   const playheadPixels = window.innerWidth * PLAYHEAD_X_PERCENT;
+
+  const toggleInstrument = () => {
+    setInstrument(prev => prev === 'violin' ? 'piano' : 'violin');
+  };
 
   return (
     <div
@@ -25,7 +29,19 @@ export const Visualizer: React.FC<{ theme: 'dark' | 'light'; toggleTheme: () => 
         <h1 className="text-3xl font-black tracking-tighter uppercase italic">
           <span style={{ color: 'var(--brand-primary)' }}>Pachelbel's</span> <span className="line-through" style={{ textDecorationColor: 'var(--brand-secondary)' }}>Canon</span>
         </h1>
-        <div className="flex gap-6 items-center">
+        <div className="flex gap-4 items-center">
+          <button
+            onClick={toggleInstrument}
+            disabled={isPianoLoading}
+            className={`p-2 border-2 transition-all font-bold text-xs ${isPianoLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            style={{
+              borderColor: 'var(--border-main)',
+              backgroundColor: instrument === 'piano' ? 'var(--text-primary)' : 'transparent',
+              color: instrument === 'piano' ? 'var(--bg-primary)' : 'var(--text-primary)'
+            }}
+          >
+            {isPianoLoading ? '⌛ LOADING...' : (instrument === 'violin' ? '🎻 VIOLIN' : '🎹 PIANO')}
+          </button>
           <button
             onClick={toggleTheme}
             className="p-2 border-2 transition-all font-bold text-xs"
@@ -40,9 +56,10 @@ export const Visualizer: React.FC<{ theme: 'dark' | 'light'; toggleTheme: () => 
           {!isPlaying ? (
             <button
               onClick={start}
-              className="px-8 py-3 bg-neon-lime text-black font-black uppercase text-xl border-4 border-black hover:bg-black hover:text-neon-lime hover:border-neon-lime transition-all glitch-hover cursor-crosshair"
+              disabled={isPianoLoading}
+              className={`px-12 py-4 bg-neon-lime text-black font-black uppercase text-2xl border-4 border-text-primary hover:bg-bg-primary hover:text-neon-lime hover:border-neon-lime transition-all glitch-hover cursor-crosshair ${isPianoLoading ? 'opacity-50 grayscale cursor-wait' : ''}`}
             >
-              / START /
+              {isPianoLoading ? 'BUFFRING PIANO...' : '[ START ]'}
             </button>
           ) : (
             <button
