@@ -78,6 +78,48 @@ export const Lane: React.FC<LaneProps> = React.memo(({
     });
   }, [visibleNotes, pixelsPerSecond, laneId]);
 
+  // Calculate visible measures (1 measure = 4 beats)
+  const visibleMeasures = useMemo(() => {
+    const beatsPerMeasure = 4;
+    const viewportTimeStart = currentTime - 8;
+    const viewportTimeEnd = currentTime + 15;
+
+    const startMeasure = Math.floor(Math.max(0, viewportTimeStart) / beatsPerMeasure);
+    const endMeasure = Math.ceil(viewportTimeEnd / beatsPerMeasure);
+
+    const measures = [];
+    const palette = [
+      '#ff5555', '#55ff55', '#5555ff', '#ffff55',
+      '#ff55ff', '#55ffff', '#ffaa55', '#aa55ff'
+    ];
+
+    for (let m = startMeasure; m <= endMeasure; m++) {
+      // Canon Sync Logic:
+      // Voice I (Lane 0) is the reference.
+      // Voice II (Lane 1) follows by 2 measures.
+      // Voice III (Lane 2) follows by 4 measures.
+      // Continuo (Lane 3) usually repeats every 2 measures.
+
+      let themeMeasureIndex = m;
+      if (laneId === 1) themeMeasureIndex = m - 2;
+      if (laneId === 2) themeMeasureIndex = m - 4;
+      if (laneId === 3) themeMeasureIndex = m % 2; // Continuo cycle
+
+      // Only color if theme measure is >= 0
+      const color = themeMeasureIndex >= 0
+        ? palette[Math.abs(themeMeasureIndex) % palette.length]
+        : 'transparent';
+
+      measures.push({
+        index: m,
+        left: m * beatsPerMeasure * pixelsPerSecond,
+        width: beatsPerMeasure * pixelsPerSecond,
+        color
+      });
+    }
+    return measures;
+  }, [currentTime, pixelsPerSecond, laneId]);
+
   // Calculate transform to scroll notes
   const transformX = playheadPosition - (currentTime * pixelsPerSecond);
 
@@ -101,7 +143,7 @@ export const Lane: React.FC<LaneProps> = React.memo(({
         <div className="absolute top-3/4 left-0 w-full h-px" style={{ backgroundColor: 'var(--text-primary)' }} />
       </div>
 
-      {/* Conveyor Belt with Notes */}
+      {/* Conveyor Belt with Measures and Notes */}
       <div
         className="absolute top-0 left-0 h-full"
         style={{
@@ -109,6 +151,28 @@ export const Lane: React.FC<LaneProps> = React.memo(({
           willChange: 'transform'
         }}
       >
+        {/* Render Measures */}
+        {visibleMeasures.map((m) => (
+          <React.Fragment key={m.index}>
+            {/* Measure Tint */}
+            <div
+              className="absolute top-0 h-full opacity-[0.08]"
+              style={{
+                left: `${m.left}px`,
+                width: `${m.width}px`,
+                backgroundColor: m.color,
+                borderLeft: '1px solid var(--text-primary)',
+              }}
+            />
+            {/* Measure Number */}
+            <div
+              className="absolute top-1 font-mono text-[8px] opacity-20"
+              style={{ left: `${m.left + 4}px`, color: 'var(--text-primary)' }}
+            >
+              M.{m.index + 1}
+            </div>
+          </React.Fragment>
+        ))}
         {notesWithPosition.map((noteBox) => {
           const isActive = currentTime >= noteBox.time &&
             currentTime <= noteBox.time + noteBox.duration;
