@@ -2,6 +2,9 @@
 
 A real-time interactive visualization of **Pachelbel's Canon in D Major** with MIDI playback.
 
+## 🔗 [Live Demo](https://yhw032.github.io/canon-visualizer/)
+
+
 ## ✨ Features
 
 - **🎹 Direct MIDI Playback** - Plays the full Canon using Tone.js from MIDI file
