@@ -9,6 +9,7 @@ interface LaneProps {
   label: string;
   pixelsPerSecond: number;
   playheadPosition: number; // pixels from left
+  theme: 'dark' | 'light';
 }
 
 export const Lane: React.FC<LaneProps> = React.memo(({
@@ -17,7 +18,8 @@ export const Lane: React.FC<LaneProps> = React.memo(({
   currentTime,
   label,
   pixelsPerSecond,
-  playheadPosition
+  playheadPosition,
+  theme
 }) => {
   // Viewport culling: only render notes within visible time range
   // Optimization: use binary search or simple indexing if possible, 
@@ -80,17 +82,23 @@ export const Lane: React.FC<LaneProps> = React.memo(({
   const transformX = playheadPosition - (currentTime * pixelsPerSecond);
 
   return (
-    <div className="relative w-full h-24 bg-black border-y border-stark-white/20 overflow-hidden mb-2">
+    <div
+      className="relative w-full h-24 border-y overflow-hidden mb-2 transition-colors duration-300"
+      style={{ backgroundColor: 'var(--bg-lane)', borderColor: 'rgba(var(--text-primary-rgb), 0.1)' }}
+    >
       {/* Lane Label - Rotated and repositioned */}
-      <div className="absolute right-4 bottom-1 text-stark-white font-black text-xs z-20 opacity-30 select-none">
+      <div
+        className="absolute right-4 bottom-1 font-black text-xs z-20 opacity-30 select-none transition-colors duration-300"
+        style={{ color: 'var(--text-primary)' }}
+      >
         {label} / CH_0{laneId}
       </div>
 
       {/* Background Grid Lines */}
       <div className="absolute inset-0 opacity-10 pointer-events-none">
-        <div className="absolute top-1/2 left-0 w-full h-px bg-stark-white" />
-        <div className="absolute top-1/4 left-0 w-full h-px bg-stark-white" />
-        <div className="absolute top-3/4 left-0 w-full h-px bg-stark-white" />
+        <div className="absolute top-1/2 left-0 w-full h-px" style={{ backgroundColor: 'var(--text-primary)' }} />
+        <div className="absolute top-1/4 left-0 w-full h-px" style={{ backgroundColor: 'var(--text-primary)' }} />
+        <div className="absolute top-3/4 left-0 w-full h-px" style={{ backgroundColor: 'var(--text-primary)' }} />
       </div>
 
       {/* Conveyor Belt with Notes */}
@@ -114,13 +122,13 @@ export const Lane: React.FC<LaneProps> = React.memo(({
                 top: `${noteBox.top}%`,
                 left: `${noteBox.left}px`,
                 width: `${noteBox.width}px`,
-                // Keep the fill but make it much more visible (40% vs 20%)
+                // Keep the fill but make it much more visible
                 backgroundColor: isActive
                   ? noteBox.pitchColor
-                  : `${noteBox.pitchColor}66`,
-                border: `2px solid ${isActive ? 'white' : noteBox.pitchColor}`,
-                mixBlendMode: 'screen',
-                boxShadow: isActive ? `0 0 30px ${noteBox.pitchColor}` : 'none',
+                  : `color-mix(in srgb, ${noteBox.pitchColor}, transparent calc(100% - (var(--note-opacity) * 100%)))`,
+                border: `2px solid ${isActive ? 'var(--active-note-border)' : noteBox.pitchColor}`,
+                mixBlendMode: 'var(--note-blend-mode)' as any,
+                boxShadow: (isActive && theme === 'dark') ? `0 0 30px ${noteBox.pitchColor}` : 'none',
                 transform: `translateY(-50%) ${isActive ? 'scaleY(1.8)' : 'scaleY(1)'}`,
                 clipPath: isActive
                   ? 'polygon(0% 0%, 100% 0%, 95% 100%, 5% 100%)'
@@ -129,12 +137,14 @@ export const Lane: React.FC<LaneProps> = React.memo(({
             >
               {isActive && (
                 <div
-                  className="absolute inset-0 bg-white opacity-40 animate-pulse"
-                  style={{ mixBlendMode: 'overlay' }}
+                  className="absolute inset-0 opacity-40 animate-pulse"
+                  style={{ mixBlendMode: 'overlay', backgroundColor: 'var(--text-primary)' }}
                 />
               )}
-              <span className={`absolute -top-5 left-0 text-[10px] font-black uppercase tracking-tighter ${isActive ? 'text-stark-white' : 'text-stark-white/60'
-                }`}>
+              <span
+                className={`absolute -top-5 left-0 text-[10px] font-black uppercase tracking-tighter transition-colors duration-300`}
+                style={{ color: isActive ? 'var(--text-primary)' : 'rgba(var(--text-primary-rgb), 0.6)' }}
+              >
                 {noteBox.note}
               </span>
             </div>
