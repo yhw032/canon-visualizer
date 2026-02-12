@@ -14,12 +14,12 @@ export type InstrumentType = 'strings' | 'piano';
 export const useCanonAudio = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
-  const [melodyTracks, setMelodyTracks] = useState<NoteData[][]>([[], [], [], []]);
+  const [melodyTracks, setMelodyTracks] = useState<NoteData[][]>([[], [], [], [], []]);
   const [instrument, setInstrument] = useState<InstrumentType>('strings');
   const [isLoading, setIsLoading] = useState(false);
 
   // Store active instruments (one per lane)
-  const instrumentsRef = useRef<(Tone.Sampler | null)[]>([null, null, null, null]);
+  const instrumentsRef = useRef<(Tone.Sampler | null)[]>([null, null, null, null, null]);
   const reverbRef = useRef<Tone.Reverb | null>(null);
   const partsRef = useRef<Tone.Part[]>([]);
   const midiDataRef = useRef<any>(null);
@@ -30,7 +30,7 @@ export const useCanonAudio = () => {
   useEffect(() => {
     // Cleanup previous instruments and reverb
     instrumentsRef.current.forEach(inst => inst?.dispose());
-    instrumentsRef.current = [null, null, null, null];
+    instrumentsRef.current = [null, null, null, null, null];
     if (reverbRef.current) {
       reverbRef.current.dispose();
       reverbRef.current = null;
@@ -75,7 +75,7 @@ export const useCanonAudio = () => {
           }, "https://tonejs.github.io/audio/salamander/", -4, 0.01, 1.0);
 
           piano.connect(reverb);
-          instrumentsRef.current = [piano, piano, piano, piano];
+          instrumentsRef.current = [piano, piano, piano, piano, piano];
         } else {
           // Strings Ensemble (Lanes 0-2: Violin, Lane 3: Cello)
           const [violin, cello] = await Promise.all([
@@ -92,7 +92,7 @@ export const useCanonAudio = () => {
 
           violin.connect(reverb);
           cello.connect(reverb);
-          instrumentsRef.current = [violin, violin, violin, cello];
+          instrumentsRef.current = [violin, violin, violin, violin, cello];
         }
         console.log(`Instruments with Reverb loaded for ${instrument} mode`);
       } catch (err) {
@@ -126,11 +126,11 @@ export const useCanonAudio = () => {
         midiDataRef.current = midiData;
 
         // Extract notes from MIDI for visualization
-        const extractedTracks: NoteData[][] = [[], [], [], []];
+        const extractedTracks: NoteData[][] = [[], [], [], [], []];
         const ppq = (midiData as any).timeDivision;
 
         // Process tracks 1-4 (Track 0 is metadata)
-        (midiData as any).track.slice(1, 5).forEach((track: any, index: number) => {
+        (midiData as any).track.slice(0, 5).forEach((track: any, index: number) => {
           let currentTicks = 0;
           const activeNotesMap = new Map<number, { startTick: number, velocity: number }>();
 

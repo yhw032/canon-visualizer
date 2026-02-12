@@ -98,12 +98,14 @@ export const Lane: React.FC<LaneProps> = React.memo(({
       // Voice I (Lane 0) is the reference.
       // Voice II (Lane 1) follows by 2 measures.
       // Voice III (Lane 2) follows by 4 measures.
-      // Continuo (Lane 3) usually repeats every 2 measures.
+      // Viola (Lane 3)
+      // Continuo (Lane 4) usually repeats every 2 measures.
 
       let themeMeasureIndex = m;
       if (laneId === 1) themeMeasureIndex = m - 2;
       if (laneId === 2) themeMeasureIndex = m - 4;
-      if (laneId === 3) themeMeasureIndex = m % 2; // Continuo cycle
+      if (laneId === 3) themeMeasureIndex = m - 6;
+      if (laneId === 4) themeMeasureIndex = m % 2; // Continuo cycle
 
       // Only color if theme measure is >= 0
       const color = themeMeasureIndex >= 0
