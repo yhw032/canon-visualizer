@@ -126,8 +126,11 @@ MIT License - feel free to use this project for learning or inspiration!
 ## 🙏 Acknowledgments
 
 - MIDI file: Pachelbel's Canon in D Major
-- Inspired by classic music visualizers
-- Built with modern web technologies
+- **Composition:** Canon and Gigue in D Major, P.37
+- **Composer:** Johann Pachelbel
+- **MIDI Source:** Based on the string quintet arrangement by jojo288 via [MuseScore](https://musescore.com/jojo288/scores/357626)
+- **License:** [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/)
+- **Attribution:** Score originally uploaded on Oct 3, 2014 (Updated May 14, 2024). Special thanks to the contributors on MuseScore for the arrangement.
 
 ---
 

@@ -132,41 +132,55 @@ export const useCanonAudio = () => {
         // Process tracks 1-4 (Track 0 is metadata)
         (midiData as any).track.slice(1, 5).forEach((track: any, index: number) => {
           let currentTicks = 0;
+          const activeNotesMap = new Map<number, { startTick: number, velocity: number }>();
 
           track.event.forEach((event: any) => {
             currentTicks += event.deltaTime;
 
-            if (event.type === 9 && event.data && event.data[0] > 0) {
+            // Type 9: Note On
+            if (event.type === 9) {
               const pitch = event.data[0];
-              const velocity = event.data[1] || 64;
+              const velocity = event.data[1];
 
-              if (velocity === 0) return;
-
-              const noteName = Tone.Frequency(pitch, 'midi').toNote();
-
-              // Find note off
-              let durationTicks = ppq / 2;
-              let tempTicks = currentTicks;
-
-              for (let i = track.event.indexOf(event) + 1; i < track.event.length; i++) {
-                const futureEvent = track.event[i];
-                tempTicks += futureEvent.deltaTime;
-
-                if ((futureEvent.type === 8 || (futureEvent.type === 9 && futureEvent.data && futureEvent.data[1] === 0))
-                  && futureEvent.data && futureEvent.data[0] === pitch) {
-                  durationTicks = tempTicks - currentTicks;
-                  break;
+              if (velocity > 0) {
+                if (activeNotesMap.has(pitch)) {
+                  const startTime = activeNotesMap.get(pitch)!.startTick;
+                  const durationTicks = currentTicks - startTime;
+                  pushNote(index, pitch, startTime, durationTicks, activeNotesMap.get(pitch)!.velocity);
                 }
+                activeNotesMap.set(pitch, { startTick: currentTicks, velocity: velocity / 127 });
+              } else {
+                handleNoteOff(index, pitch, currentTicks);
               }
-
-              extractedTracks[index].push({
-                time: currentTicks / ppq,
-                note: noteName,
-                duration: durationTicks / ppq,
-                velocity: velocity / 127
-              });
+            }
+            // Type 8: Note Off
+            else if (event.type === 8) {
+              const pitch = event.data[0];
+              handleNoteOff(index, pitch, currentTicks);
             }
           });
+
+
+          function pushNote(laneIndex: number, pitch: number, startTick: number, durationTicks: number, vel: number) {
+            if (durationTicks <= 0) return;
+
+            const noteName = Tone.Frequency(pitch, 'midi').toNote();
+            extractedTracks[laneIndex].push({
+              time: startTick / ppq,
+              note: noteName,
+              duration: durationTicks / ppq,
+              velocity: vel
+            });
+          }
+
+          function handleNoteOff(laneIndex: number, pitch: number, endTick: number) {
+            if (activeNotesMap.has(pitch)) {
+              const noteInfo = activeNotesMap.get(pitch)!;
+              const durationTicks = endTick - noteInfo.startTick;
+              pushNote(laneIndex, pitch, noteInfo.startTick, durationTicks, noteInfo.velocity);
+              activeNotesMap.delete(pitch);
+            }
+          }
         });
 
         setMelodyTracks(extractedTracks);

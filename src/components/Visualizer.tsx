@@ -121,11 +121,19 @@ export const Visualizer: React.FC<{ theme: 'dark' | 'light'; toggleTheme: () => 
         className="p-6 border-t-2 z-50 flex justify-between items-center overflow-hidden transition-colors duration-300"
         style={{ backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border-main)' }}
       >
-        <div
-          className="text-xs font-mono uppercase tracking-[0.5em] animate-pulse"
-          style={{ color: 'var(--text-secondary)' }}
-        >
-          Digital Brutalism // Polyphony Glitch // Canon in D Major
+        <div className="flex flex-col">
+          <div
+            className="text-xs font-mono uppercase tracking-[0.5em] animate-pulse"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            Digital Brutalism // Polyphony Glitch // Canon in D Major
+          </div>
+          <div
+            className="text-[10px] font-mono mt-1"
+            style={{ color: 'var(--text-secondary)', opacity: 0.7 }}
+          >
+            Music: Canon in D (P.37) by Pachelbel | Arr. by jojo288 (CC BY 4.0)
+          </div>
         </div>
         <div className="text-xl font-black italic">
           {currentTime.toFixed(3)}s
