@@ -6,7 +6,20 @@ const PIXELS_PER_SECOND = 100; // Adjust scrolling speed
 const PLAYHEAD_X_PERCENT = 0.3; // 30% from the left
 
 export const Visualizer: React.FC<{ theme: 'dark' | 'light'; toggleTheme: () => void }> = ({ theme, toggleTheme }) => {
-  const { isPlaying, start, stop, currentTime, melodyTracks, instrument, setInstrument, isLoading } = useCanonAudio();
+  const {
+    isPlaying,
+    start,
+    stop,
+    currentTime,
+    melodyTracks,
+    instrument,
+    setInstrument,
+    isLoading,
+    volumes,
+    muted,
+    updateVolume,
+    toggleMute
+  } = useCanonAudio();
 
   const playheadPixels = window.innerWidth * PLAYHEAD_X_PERCENT;
 
@@ -111,6 +124,10 @@ export const Visualizer: React.FC<{ theme: 'dark' | 'light'; toggleTheme: () => 
             pixelsPerSecond={PIXELS_PER_SECOND}
             playheadPosition={playheadPixels}
             theme={theme}
+            volume={volumes[i]}
+            isMuted={muted[i]}
+            onVolumeChange={(val) => updateVolume(i, val)}
+            onToggleMute={() => toggleMute(i)}
           />
         ))}
 

@@ -17,6 +17,8 @@ export const useCanonAudio = () => {
   const [melodyTracks, setMelodyTracks] = useState<NoteData[][]>([[], [], [], [], []]);
   const [instrument, setInstrument] = useState<InstrumentType>('strings');
   const [isLoading, setIsLoading] = useState(false);
+  const [volumes, setVolumes] = useState<number[]>([-5, -5, -5, -5, -5]);
+  const [muted, setMuted] = useState<boolean[]>([false, false, false, false, false]);
 
   // Store active instruments (one per lane)
   const instrumentsRef = useRef<(Tone.Sampler | null)[]>([null, null, null, null, null]);
@@ -25,6 +27,35 @@ export const useCanonAudio = () => {
   const midiDataRef = useRef<any>(null);
   const animationFrameRef = useRef<number | null>(null);
   const lastUpdateTime = useRef<number>(0);
+
+  // Update volumes/mute
+  useEffect(() => {
+    instrumentsRef.current.forEach((inst, i) => {
+      if (inst) {
+        if (muted[i]) {
+          inst.volume.rampTo(-Infinity, 0.1);
+        } else {
+          inst.volume.rampTo(volumes[i], 0.1);
+        }
+      }
+    });
+  }, [volumes, muted]);
+
+  const updateVolume = useCallback((index: number, val: number) => {
+    setVolumes(prev => {
+      const newVols = [...prev];
+      newVols[index] = val;
+      return newVols;
+    });
+  }, []);
+
+  const toggleMute = useCallback((index: number) => {
+    setMuted(prev => {
+      const newMuted = [...prev];
+      newMuted[index] = !newMuted[index];
+      return newMuted;
+    });
+  }, []);
 
   // Initialize/Update Instruments based on mode
   useEffect(() => {
@@ -62,38 +93,80 @@ export const useCanonAudio = () => {
         await reverb.generate(); // Pre-generate the impulse response
         reverbRef.current = reverb;
 
-        if (instrument === 'piano') {
-          const piano = await loadSampler({
-            A0: "A0.mp3", C1: "C1.mp3", "D#1": "Ds1.mp3", "F#1": "Fs1.mp3",
-            A1: "A1.mp3", C2: "C2.mp3", "D#2": "Ds2.mp3", "F#2": "Fs2.mp3",
-            A2: "A2.mp3", C3: "C3.mp3", "D#3": "Ds3.mp3", "F#3": "Fs3.mp3",
-            A3: "A3.mp3", C4: "C4.mp3", "D#4": "Ds4.mp3", "F#4": "Fs4.mp3",
-            A4: "A4.mp3", C5: "C5.mp3", "D#5": "Ds5.mp3", "F#5": "Fs5.mp3",
-            A5: "A5.mp3", C6: "C6.mp3", "D#6": "Ds6.mp3", "F#6": "Fs6.mp3",
-            A6: "A6.mp3", C7: "C7.mp3", "D#7": "Ds7.mp3", "F#7": "Fs7.mp3",
-            A7: "A7.mp3", C8: "C8.mp3"
-          }, "https://tonejs.github.io/audio/salamander/", -4, 0.01, 1.0);
+        // Helper to load instruments with specific config
+        const createSampler = (type: 'piano' | 'violin' | 'cello') => {
+          let samples: any = {};
+          let baseUrl = "";
+          let config = { volume: 0, attack: 0, release: 0 };
 
-          piano.connect(reverb);
-          instrumentsRef.current = [piano, piano, piano, piano, piano];
-        } else {
-          // Strings Ensemble (Lanes 0-2: Violin, Lane 3: Cello)
-          const [violin, cello] = await Promise.all([
-            loadSampler({
+          if (type === 'piano') {
+            samples = {
+              A0: "A0.mp3", C1: "C1.mp3", "D#1": "Ds1.mp3", "F#1": "Fs1.mp3",
+              A1: "A1.mp3", C2: "C2.mp3", "D#2": "Ds2.mp3", "F#2": "Fs2.mp3",
+              A2: "A2.mp3", C3: "C3.mp3", "D#3": "Ds3.mp3", "F#3": "Fs3.mp3",
+              A3: "A3.mp3", C4: "C4.mp3", "D#4": "Ds4.mp3", "F#4": "Fs4.mp3",
+              A4: "A4.mp3", C5: "C5.mp3", "D#5": "Ds5.mp3", "F#5": "Fs5.mp3",
+              A5: "A5.mp3", C6: "C6.mp3", "D#6": "Ds6.mp3", "F#6": "Fs6.mp3",
+              A6: "A6.mp3", C7: "C7.mp3", "D#7": "Ds7.mp3", "F#7": "Fs7.mp3",
+              A7: "A7.mp3", C8: "C8.mp3"
+            };
+            baseUrl = "https://tonejs.github.io/audio/salamander/";
+            config = { volume: -4, attack: 0.01, release: 1.0 };
+          } else if (type === 'violin') {
+            samples = {
               A3: "A3.mp3", C4: "C4.mp3", E4: "E4.mp3", G4: "G4.mp3",
               A4: "A4.mp3", C5: "C5.mp3", E5: "E5.mp3", G5: "G5.mp3",
               A5: "A5.mp3", C6: "C6.mp3"
-            }, "https://nbrosowsky.github.io/tonejs-instruments/samples/violin/", -2, 0.05, 1.5), // Lush release for legate
-            loadSampler({
+            };
+            baseUrl = "https://nbrosowsky.github.io/tonejs-instruments/samples/violin/";
+            config = { volume: -2, attack: 0.05, release: 1.5 };
+          } else if (type === 'cello') {
+            samples = {
               A2: "A2.mp3", C2: "C2.mp3", E2: "E2.mp3", G2: "G2.mp3",
               A3: "A3.mp3", C3: "C3.mp3", E3: "E3.mp3", G3: "G3.mp3"
-            }, "https://nbrosowsky.github.io/tonejs-instruments/samples/cello/", 0, 0.08, 1.8) // Even longer release for cello bass
-          ]);
+            };
+            baseUrl = "https://nbrosowsky.github.io/tonejs-instruments/samples/cello/";
+            config = { volume: 0, attack: 0.08, release: 1.8 };
+          }
 
-          violin.connect(reverb);
-          cello.connect(reverb);
-          instrumentsRef.current = [violin, violin, violin, violin, cello];
+          return loadSampler(samples, baseUrl, config.volume, config.attack, config.release);
+        };
+
+        let newInstruments: Tone.Sampler[] = [];
+
+        if (instrument === 'piano') {
+          // Load 5 independent pianos
+          newInstruments = await Promise.all([
+            createSampler('piano'),
+            createSampler('piano'),
+            createSampler('piano'),
+            createSampler('piano'),
+            createSampler('piano')
+          ]);
+        } else {
+          // Strings Ensemble: 4 Violins, 1 Cello
+          // We load them in parallel. Since the URLs are same, browser cache should handle it.
+          newInstruments = await Promise.all([
+            createSampler('violin'),
+            createSampler('violin'),
+            createSampler('violin'),
+            createSampler('violin'),
+            createSampler('cello')
+          ]);
         }
+
+        // Connect all to reverb
+        newInstruments.forEach(inst => inst.connect(reverb));
+        instrumentsRef.current = newInstruments;
+
+        // Apply initial volumes immediately
+        instrumentsRef.current.forEach((inst, i) => {
+          if (inst) {
+            if (muted[i]) inst.volume.value = -Infinity;
+            else inst.volume.value = volumes[i];
+          }
+        });
+
         console.log(`Instruments with Reverb loaded for ${instrument} mode`);
       } catch (err) {
         console.error('Error loading instruments:', err);
@@ -227,6 +300,7 @@ export const useCanonAudio = () => {
 
       const part = new Tone.Part((time, value) => {
         const inst = instrumentsRef.current[laneIndex];
+        // Volume check moved to effect but triggerAttackRelease still fires
         if (inst) {
           inst.triggerAttackRelease(
             value.note,
@@ -277,5 +351,18 @@ export const useCanonAudio = () => {
     setCurrentTime(0);
   }, []);
 
-  return { isPlaying, start, stop, currentTime, melodyTracks, instrument, setInstrument, isLoading };
+  return {
+    isPlaying,
+    start,
+    stop,
+    currentTime,
+    melodyTracks,
+    instrument,
+    setInstrument,
+    isLoading,
+    volumes,
+    muted,
+    updateVolume,
+    toggleMute
+  };
 };

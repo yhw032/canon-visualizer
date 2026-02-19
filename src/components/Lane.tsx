@@ -10,6 +10,10 @@ interface LaneProps {
   pixelsPerSecond: number;
   playheadPosition: number; // pixels from left
   theme: 'dark' | 'light';
+  volume: number;
+  isMuted: boolean;
+  onVolumeChange: (val: number) => void;
+  onToggleMute: () => void;
 }
 
 export const Lane: React.FC<LaneProps> = React.memo(({
@@ -19,7 +23,11 @@ export const Lane: React.FC<LaneProps> = React.memo(({
   label,
   pixelsPerSecond,
   playheadPosition,
-  theme
+  theme,
+  volume,
+  isMuted,
+  onVolumeChange,
+  onToggleMute
 }) => {
   // Viewport culling: only render notes within visible time range
   // Optimization: use binary search or simple indexing if possible, 
@@ -127,9 +135,52 @@ export const Lane: React.FC<LaneProps> = React.memo(({
 
   return (
     <div
-      className="relative w-full h-24 border-y overflow-hidden mb-2 transition-colors duration-300"
+      className="relative w-full h-24 border-y overflow-hidden mb-2 transition-colors duration-300 group"
       style={{ backgroundColor: 'var(--bg-lane)', borderColor: 'rgba(var(--text-primary-rgb), 0.1)' }}
     >
+      {/* Controls Overlay (Left Side) - Fixed Position within Lane */}
+      <div
+        className="absolute left-0 top-0 bottom-0 w-16 z-50 border-r flex flex-col items-center justify-between py-2 transition-all duration-300"
+        style={{
+          backgroundColor: 'var(--bg-primary)',
+          borderColor: 'var(--border-main)',
+          boxShadow: '5px 0 15px rgba(0,0,0,0.5)' // Add shadow to separate from content
+        }}
+      >
+        {/* Mute Toggle */}
+        <button
+          onClick={onToggleMute}
+          className={`w-10 h-6 flex items-center justify-center border text-[9px] font-black transition-all ${isMuted
+              ? 'bg-neon-pink text-black border-neon-pink'
+              : 'bg-transparent text-primary hover:bg-white hover:text-black'
+            }`}
+          style={{
+            borderColor: isMuted ? 'var(--color-neon-pink)' : 'var(--text-primary)',
+            color: isMuted ? 'black' : 'var(--text-primary)'
+          }}
+          title={isMuted ? "Unmute" : "Mute"}
+        >
+          {isMuted ? 'MUTED' : 'ON'}
+        </button>
+
+        {/* Volume Slider (Vertical) */}
+        <div className="relative h-full w-full flex items-center justify-center overflow-visible">
+          {/* Custom Range Input - Rotated */}
+          <input
+            type="range"
+            min="-40"
+            max="0"
+            step="1"
+            value={isMuted ? -40 : volume}
+            onChange={(e) => onVolumeChange(parseFloat(e.target.value))}
+            className="w-16 h-4 -rotate-90 origin-center cursor-pointer opacity-80 hover:opacity-100"
+            style={{
+              accentColor: 'var(--brand-primary)'
+            }}
+          />
+        </div>
+      </div>
+
       {/* Lane Label - Rotated and repositioned */}
       <div
         className="absolute right-4 bottom-1 font-black text-xs z-20 opacity-30 select-none transition-colors duration-300"
