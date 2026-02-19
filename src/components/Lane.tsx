@@ -151,8 +151,8 @@ export const Lane: React.FC<LaneProps> = React.memo(({
         <button
           onClick={onToggleMute}
           className={`w-10 h-6 flex items-center justify-center border text-[9px] font-black transition-all ${isMuted
-              ? 'bg-neon-pink text-black border-neon-pink'
-              : 'bg-transparent text-primary hover:bg-white hover:text-black'
+            ? 'bg-neon-pink text-black border-neon-pink'
+            : 'bg-transparent text-primary hover:bg-white hover:text-black'
             }`}
           style={{
             borderColor: isMuted ? 'var(--color-neon-pink)' : 'var(--text-primary)',
@@ -201,7 +201,10 @@ export const Lane: React.FC<LaneProps> = React.memo(({
         className="absolute top-0 left-0 h-full"
         style={{
           transform: `translateX(${transformX}px) translateZ(0)`, // Force GPU layer
-          willChange: 'transform'
+          willChange: 'transform',
+          opacity: isMuted ? 0.3 : 1,
+          filter: isMuted ? 'grayscale(80%) blur(0.5px)' : 'none',
+          transition: 'opacity 0.5s ease'
         }}
       >
         {/* Render Measures */}
