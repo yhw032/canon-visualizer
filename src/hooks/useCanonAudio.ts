@@ -15,7 +15,7 @@ export const useCanonAudio = () => {
   // Initial Configuration
   // Range: -40 (Silent) to 0 (Max)
   const INITIAL_VOLUMES = [-5, -5, -5, -40, -15]; // Track 4 (Viola) -> 0% (-40), Track 5(Bass) -> ~50% (-15)
-  const INITIAL_MUTED = [false, false, false, false, false];
+  const INITIAL_MUTED = [false, false, false, true, false];
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
