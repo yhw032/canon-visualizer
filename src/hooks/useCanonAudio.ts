@@ -12,13 +12,18 @@ export interface NoteData {
 export type InstrumentType = 'strings' | 'piano';
 
 export const useCanonAudio = () => {
+  // Initial Configuration
+  // Range: -40 (Silent) to 0 (Max)
+  const INITIAL_VOLUMES = [-5, -5, -5, -40, -15]; // Track 4 (Viola) -> 0% (-40), Track 5(Bass) -> ~50% (-15)
+  const INITIAL_MUTED = [false, false, false, false, false];
+
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [melodyTracks, setMelodyTracks] = useState<NoteData[][]>([[], [], [], [], []]);
   const [instrument, setInstrument] = useState<InstrumentType>('strings');
   const [isLoading, setIsLoading] = useState(false);
-  const [volumes, setVolumes] = useState<number[]>([-5, -5, -5, -5, -5]);
-  const [muted, setMuted] = useState<boolean[]>([false, false, false, false, false]);
+  const [volumes, setVolumes] = useState<number[]>(INITIAL_VOLUMES);
+  const [muted, setMuted] = useState<boolean[]>(INITIAL_MUTED);
 
   // Store active instruments (one per lane)
   const instrumentsRef = useRef<(Tone.Sampler | null)[]>([null, null, null, null, null]);
